@@ -474,7 +474,7 @@
 						$data_body[$p] .= '<td width="10%" nowrap="nowrap" align="center">'.$fields['interpreter_id'].'</td>';
 						$numbers_only = preg_replace("/[^\d]/", "", $fields['caller_id_number']);
 						$contact_number = preg_replace("/^1?(\d{3})(\d{3})(\d{4})$/", "1($1) $2-$3", $numbers_only);
-						$data_body[$p] .= '<td width="12%" nowrap="nowrap" align="center">'.ucwords(trim($fields['employee_id_or_name'])).'</td>';
+						$data_body[$p] .= '<td width="12%" nowrap="nowrap" align="center">'.ucwords(trim($fields['caller_name'])).'</td>';
 						$data_body[$p] .= '<td width="10%" nowrap="nowrap" align="center">'.$contact_number.'</td>';
 						$languageSet = (new ISO639)->languageSetByLanguage($fields['interpret_language']);
 						$data_body[$p] .= '<td width="8%" nowrap="nowrap" align="center">'.$languageSet.'</td>';

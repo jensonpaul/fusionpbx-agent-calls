@@ -9,7 +9,7 @@
 	require_once "resources/check_auth.php";
 
 //check permissions
-	if (permission_exists('agent_live_call_view')) {
+	if (permission_exists('client_call_record_view')) {
 		//access granted
 	}
 	else {
@@ -18,12 +18,57 @@
 	}
 
 //add multi-lingual support
-$language = new text;
-$text = $language->get(null,'app/agent_live_call');
+    $language = new text;
+    $text = $language->get(null,'app/agent_live_call');
+
+//create new call detail record
+    if (count($_POST) > 0) {
+        //check form action
+		    $action = $_POST['action'];
+        
+        if ($action == 'add_ccr') {
+            $xml_cdr_uuid = trim($_POST['xml_cdr_uuid']);
+
+            if (strlen($xml_cdr_uuid) > 0) {
+                $uuid_pattern = '/[^-A-Fa-f0-9]/';
+                $num_pattern = '/[^-A-Za-z0-9()*#]/';
+                $uuid = preg_replace($uuid_pattern,'',$xml_cdr_uuid);
+    
+                //check if uuid record exists
+                    $sql = "select client_call_record_uuid from v_client_call_records where call_uuid = :call_uuid ";
+                    $parameters['call_uuid'] = $uuid;
+                    $database = new database;
+                    $client_call_record_uuid = $database->select($sql, $parameters, 'column');
+                    unset($sql);
+                    unset($parameters);
+    
+                //begin array
+                    $array['client_call_records'][0]['call_uuid'] = $uuid;
+                    //$array['client_call_records'][0]['user_uuid'] = $_SESSION['user']['user_uuid'];
+                    $array['client_call_records'][0]['domain_uuid'] = $_SESSION['domain_uuid'];
+                    //$array['client_call_records'][0]['start_timestamp'] = (new \DateTime())->format('Y-m-d H:i:s.uT');
+    
+                if ($client_call_record_uuid) {
+                    //update record
+                        $array['client_call_records'][0]['client_call_record_uuid'] = $client_call_record_uuid;
+                } else {
+                    //create record
+                        $array['client_call_records'][0]['client_call_record_uuid'] = uuid();
+                }
+    
+                //add or update records
+                    $database = new database;
+                    $database->app_name = 'client_call_record';
+                    $database->app_uuid = '0106c183-c7f3-4f5b-82c6-b7aee0ced23e';
+                    $result = $database->save($array);
+                    unset($array);
+            }
+        }
+    }
 
 //call record include
 	$rows_per_page = ($_SESSION['domain']['paging']['numeric'] != '') ? $_SESSION['domain']['paging']['numeric'] : 50;
-	require_once "../ccr_inc.php";
+	require_once "../cdr_inc.php";
 
 //show the content
 	echo "<div class='heading'>";
@@ -45,15 +90,17 @@ $text = $language->get(null,'app/agent_live_call');
 	echo "<th class='no-wrap'>".$text['label-caller_id_number']."</th>\n";
 	echo "<th class='no-wrap hide-md-dn'>".$text['label-caller_destination']."</th>\n";
 	echo "<th class=''>".$text['label-destination']."</th>\n";
-	echo "<th class='no-wrap'>".$text['label-access_code']."</th>\n";
-	echo "<th class='no-wrap'>".$text['label-cost_center_id']."</th>\n";
-	echo "<th class='no-wrap'>Employee ID</th>\n";
-	echo "<th class=''>".$text['label-interpret_language']."</th>\n";
-	echo "<th class='no-wrap'>".$text['label-interpreter_id']."</th>\n";
+	//echo "<th class='no-wrap'>".$text['label-access_code']."</th>\n";
+	//echo "<th class='no-wrap'>".$text['label-cost_center_id']."</th>\n";
+	//echo "<th class='no-wrap'>Employee ID</th>\n";
+	//echo "<th class=''>".$text['label-interpret_language']."</th>\n";
+	//echo "<th class='no-wrap'>".$text['label-interpreter_id']."</th>\n";
 	echo "<th class='center shrink'>".$text['label-date']."</th>\n";
 	echo "<th class='center shrink hide-md-dn'>".$text['label-time']."</th>\n";
 	echo "<th class='center shrink'>".$text['label-duration']."</th>\n";
-	echo "<th class='center shrink'>Interpreted?</th>\n";
+	//echo "<th class='center shrink'>Interpreted?</th>\n";
+	echo "<th class='center shrink'>Status</th>\n";
+	echo "<th class='center shrink'>Add</th>\n";
 	echo "</tr>\n";
 
 //show results
@@ -118,8 +165,8 @@ $text = $language->get(null,'app/agent_live_call');
 						$content .= "	<td class='middle'>".$row['domain_name']."</td>\n";
 					}
 				//caller id name
-					#$content .= "	<td class='middle overflow hide-md-dn'>".escape($row['caller_id_name'])."</td>\n";
-					$content .= "	<td class='middle overflow hide-md-dn'>".escape($row['caller_name'])."</td>\n";
+					$content .= "	<td class='middle overflow hide-md-dn'>".escape($row['caller_id_name'])."</td>\n";
+					//$content .= "	<td class='middle overflow hide-md-dn'>".escape($row['caller_name'])."</td>\n";
 				//source
 					$content .= "	<td class='middle no-wrap'>";
 					if (is_numeric($row['caller_id_number'])) {
@@ -147,23 +194,17 @@ $text = $language->get(null,'app/agent_live_call');
 						$content .= escape(substr($row['destination_number'], 0, 20))."\n";
 					}
 					$content .= "	</td>\n";
-				//client access code
-					$content .= "	<td class='middle no-wrap'>".escape($row['access_code'])."</td>\n";
-				//cost center id
-					$content .= "	<td class='middle no-wrap'>".escape($row['cost_center_id'])."</td>\n";
-				//employee id
-					$content .= "	<td class='middle no-wrap'>".escape($row['employee_id'])."</td>\n";
-				//interpret language
-					$content .= "	<td class='middle no-wrap'>".escape($row['interpret_language'])."</td>\n";
-				//interpreter id
-					$content .= "	<td class='middle no-wrap'>".escape($row['interpreter_id'])."</td>\n";
 				//start
-					$content .= "	<td class='middle center no-wrap'>".$row['start_date_formatted']."</td>\n";
+                    $content .= "	<td class='middle center no-wrap'>".$row['start_date_formatted']."</td>\n";
 					$content .= "	<td class='middle center no-wrap hide-md-dn'>".$row['start_time_formatted']."</td>\n";
 				//duration
 					$content .= "	<td class='middle center hide-sm-dn'>".gmdate("G:i:s", $seconds)."</td>\n";
-				//is interpret or not
-					if (!empty($row['interpret_stamp_begin'])) {
+				//call result/status
+                    $content .= "	<td class='middle no-wrap hide-sm-dn'>".ucwords(escape($call_result))."</td>\n";
+				//add action
+					if ($row['client_call_record_uuid'] === NULL && $call_result == 'answered' && $row['answer_epoch'] != 0) {
+						$content .= "	<td class='middle center hide-sm-dn'><button type='button' class='btn btn-default btn-ccr-add' data-uuid='".$row['xml_cdr_uuid']."'><i class='fa fa-plus'></i></button></td>\n";
+					} elseif ($row['client_call_record_uuid'] !== NULL) {
 						$content .= "	<td class='middle center hide-sm-dn'><i class='fa fa-check-circle text-success'></i></td>\n";
 					} else {
 						$content .= "	<td class='middle center hide-sm-dn'>&nbsp;</td>\n";

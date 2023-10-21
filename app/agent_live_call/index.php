@@ -123,7 +123,8 @@ foreach ($interpret_languages_list as $interpret_language_name) {
 
 			var access_code = value.access_code && value.access_code.length > 0 ? value.access_code : '';
 			var cost_center_id = value.cost_center_id && value.cost_center_id.length > 0 ? value.cost_center_id : '';
-			var employee_id_or_name = value.employee_id_or_name && value.employee_id_or_name.length > 0 ? value.employee_id_or_name : '';
+			var employee_id = value.employee_id && value.employee_id.length > 0 ? value.employee_id : '';
+			var caller_name = value.caller_name && value.caller_name.length > 0 ? value.caller_name : '';
 			var interpret_language = value.interpret_language && value.interpret_language.length > 0 ? value.interpret_language : '';
 			var interpreter_id = value.interpreter_id && value.interpreter_id.length > 0 ? value.interpreter_id : '';
 			var fusion_group_interpreter_id = value.fusion_group_interpreter_id && value.fusion_group_interpreter_id.length > 0 ? value.fusion_group_interpreter_id : '';
@@ -162,13 +163,17 @@ foreach ($interpret_languages_list as $interpret_language_name) {
 				block += '								<input type="text" class="form-control form-control-sm" name="cost_center_id" ';
 				block += '									value="' + cost_center_id + '" autocomplete="off" placeholder="Cost Center ID">';
 				block += '							</div>';
-				block += '							<div class="mb-auto form-group col-md-2">';
-				block += '								<input type="text" class="form-control form-control-sm" name="employee_id_or_name" ';
-				block += '									value="' + employee_id_or_name + '" autocomplete="off" placeholder="Employee ID / Representative Name">';
+				block += '							<div class="mb-auto form-group col-md-1">';
+				block += '								<input type="text" class="form-control form-control-sm" name="employee_id" ';
+				block += '									value="' + employee_id + '" autocomplete="off" placeholder="Employee ID">';
 				block += '							</div>';
 				block += '							<div class="mb-auto form-group col-md-2">';
+				block += '								<input required type="text" class="form-control form-control-sm" name="caller_name" ';
+				block += '									value="' + caller_name + '" autocomplete="off" placeholder="Caller Name">';
+				block += '							</div>';
+				block += '							<div class="mb-auto form-group col-md-1">';
 				block += '								<select required class="form-control form-control-sm" name="interpret_language">';
-				block += '									<option value="">Choose Language...</option>';
+				block += '									<option value="">Language...</option>';
 				block += '									' + option_list;
 				block += '								</select>';
 				block += '							</div>';

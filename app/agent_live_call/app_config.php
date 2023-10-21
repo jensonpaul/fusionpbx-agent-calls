@@ -117,9 +117,13 @@
 		$apps[$x]['db'][$y]['fields'][$z]['type'] = "text";
 		$apps[$x]['db'][$y]['fields'][$z]['description']['en-us'] = "Enter the cost center id.";
 		$z++;
-		$apps[$x]['db'][$y]['fields'][$z]['name']['text'] = "employee_id_or_name";
+		$apps[$x]['db'][$y]['fields'][$z]['name']['text'] = "employee_id";
 		$apps[$x]['db'][$y]['fields'][$z]['type'] = "text";
-		$apps[$x]['db'][$y]['fields'][$z]['description']['en-us'] = "Enter the employee id / representative name.";
+		$apps[$x]['db'][$y]['fields'][$z]['description']['en-us'] = "Enter the employee id";
+		$z++;
+		$apps[$x]['db'][$y]['fields'][$z]['name']['text'] = "caller_name";
+		$apps[$x]['db'][$y]['fields'][$z]['type'] = "text";
+		$apps[$x]['db'][$y]['fields'][$z]['description']['en-us'] = "Enter the caller name.";
 		$z++;
 		$apps[$x]['db'][$y]['fields'][$z]['name']['text'] = "interpret_language";
 		$apps[$x]['db'][$y]['fields'][$z]['type'] = "text";

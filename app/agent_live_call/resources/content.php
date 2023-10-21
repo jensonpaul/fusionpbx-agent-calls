@@ -22,6 +22,60 @@ else {
 $language = new text;
 $text = $language->get(null,'app/agent_live_call');
 
+//provide call details when extension request is received
+//request with api key instead of user login
+if (!empty($_GET['extension'])) {
+	$_SESSION['user']['extensions'][] = $_GET['extension'];
+
+	$sql = "select ";
+	$sql .= "e.extension_uuid ";
+	$sql .= "from ";
+	$sql .= "v_extensions as e ";
+	$sql .= "where ";
+	$sql .= "e.extension LIKE :extension ";
+	$sql .= "or e.number_alias LIKE :number_alias ";
+	$parameters['extension'] = $_GET['extension'];
+	$parameters['number_alias'] = $_GET['extension'];
+	$database = new database;
+	$extension_uuid = $database->select($sql, $parameters, 'column');
+	unset($sql, $parameters);
+
+	$sql = "select ";
+	$sql .= "eu.user_uuid ";
+	$sql .= "from ";
+	$sql .= "v_extension_users as eu ";
+	$sql .= "where ";
+	$sql .= "eu.extension_uuid::text LIKE :extension_uuid ";
+	$parameters['extension_uuid'] = $extension_uuid;
+	$database = new database;
+	$user_uuid = $database->select($sql, $parameters, 'column');
+	unset($sql, $parameters);
+
+	/*
+	$sql = "select ";
+	$sql .= "eu.user_uuid ";
+	$sql .= "from ";
+	$sql .= "v_users as eu ";
+	$sql .= "where ";
+	$sql .= "eu.username LIKE :username ";
+	$parameters['username'] = '%'.$_GET['extension'].'%';
+	$database = new database;
+	$user_uuid = $database->select($sql, $parameters, 'column');
+	unset($sql, $parameters);
+	*/
+
+	$_SESSION['domain_uuid'] = "ae21945e-948b-4e24-9b4c-70f68c494266";
+	$_SESSION['event_socket_ip_address'] = "127.0.0.1";
+	$_SESSION['event_socket_port'] = "8021";
+	$_SESSION['event_socket_password'] = "ClueCon";
+	$_SESSION['domain_name'] = "pbx.avaza.co";
+	$_SESSION['user']['user_uuid'] = $user_uuid;
+	unset($extension_uuid, $user_uuid);
+
+	#$_SESSION['domain_uuid'] = "bac758bd-3ac3-4f15-a710-c9d6b3f66bb7";
+	#$_SESSION['domain_name'] = "52.55.236.220";
+}
+
 //get the call activity
 $agent_live_call = new agent_live_call;
 $activity = $agent_live_call->call_activity();
@@ -172,7 +226,8 @@ if (is_array($activity)) {
 		if (is_array($row) && sizeof($row) != 0) {
 			$access_code = $row["access_code"];
 			$cost_center_id = $row["cost_center_id"];
-			$employee_id_or_name = $row["employee_id_or_name"];
+			$employee_id = $row["employee_id"];
+			$caller_name = $row["caller_name"];
 			$interpret_language = $row["interpret_language"];
 			$interpreter_id = $row["interpreter_id"];
 			$fusion_group_interpreter_id = $row["fusion_group_interpreter_id"];
@@ -180,7 +235,8 @@ if (is_array($activity)) {
 		} else {
 			$access_code = '';
 			$cost_center_id = '';
-			$employee_id_or_name = '';
+			$employee_id = '';
+			$caller_name = '';
 			$interpret_language = '';
 			$interpreter_id = '';
 			$fusion_group_interpreter_id = '';
@@ -188,19 +244,54 @@ if (is_array($activity)) {
 		}
 		unset($sql, $parameters, $row);
 
+		//get the caller ID from variables
+			if (!isset($caller_id_number) && isset($ext['variable_caller_id_number'])) {
+				$caller_id_number = urldecode($ext['variable_caller_id_number']);
+			}
+			if (!isset($caller_id_number) && isset($ext['variable_sip_from_user'])) {
+				$caller_id_number = urldecode($ext['variable_sip_from_user']);
+			}
+
+		//if the origination caller id name and number are set then use them
+			if (isset($ext['variable_origination_caller_id_number'])) {
+				$caller_id_number = urldecode($ext['variable_origination_caller_id_number']);
+			}
+
+		//if the call is outbound use the external caller ID
+			if (isset($ext['variable_origination_caller_id_number'])) {
+				$caller_id_number = urldecode($ext['variable_origination_caller_id_number']);
+			}
+
+			if (urldecode($ext['variable_call_direction']) == 'outbound' && isset($ext['variable_effective_caller_id_number'])) {
+				$caller_id_number = urldecode($ext['variable_effective_caller_id_number']);
+			}
+
+		//if the sip_from_domain and domain_name are not the same then original call direction was inbound
+			//when an inbound call is forward the call_direction is set to inbound and then updated to outbound
+			//use sip_from_display and sip_from_user to get the original caller ID instead of the updated caller ID info from the forward
+			if (isset($ext['variable_sip_from_domain']) && urldecode($ext['variable_sip_from_domain']) != urldecode($ext['variable_domain_name'])) {
+				if (isset($ext['variable_sip_from_user'])) {
+					$caller_id_number = urldecode($ext['variable_sip_from_user']);
+				}
+			}
+
 		if (in_array($extension, $_SESSION['user']['extensions'])) {
 			//build the list of active calls
 			$active_calls[$x]['style'] = $style;
 			$active_calls[$x]['call_uuid'] = escape($ext['call_uuid']);
+			$active_calls[$x]['variable_bridge_uuid'] = escape($ext['variable_bridge_uuid']);
 			$active_calls[$x]['call_number'] = escape($call_number);
 			$active_calls[$x]['call_length'] = escape($ext['call_length']);
+			$active_calls[$x]['caller_number'] = escape($caller_id_number);
+			$active_calls[$x]['caller_destination'] = escape($ext['dest']);
 			$active_calls[$x]['destination'] = escape($ext['destination']);
 			$active_calls[$x]['interpret_stamp_begin'] = $interpret_stamp_begin;
 			$active_calls[$x]['label_start_timestamp'] = $text['label-start_timestamp'];
 
 			$active_calls[$x]['access_code'] = escape($access_code);
 			$active_calls[$x]['cost_center_id'] = escape($cost_center_id);
-			$active_calls[$x]['employee_id_or_name'] = escape($employee_id_or_name);
+			$active_calls[$x]['employee_id'] = escape($employee_id);
+			$active_calls[$x]['caller_name'] = escape($caller_name);
 			$active_calls[$x]['interpret_language'] = $interpret_language;
 			$active_calls[$x]['interpreter_id'] = escape($interpreter_id);
 			$active_calls[$x]['fusion_group_interpreter_id'] = escape($fusion_group_interpreter_id);

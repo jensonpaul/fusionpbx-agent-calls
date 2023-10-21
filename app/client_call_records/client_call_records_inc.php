@@ -212,7 +212,8 @@
 	}
 	$sql .= "f.access_code, \n";
 	$sql .= "f.cost_center_id, \n";
-	$sql .= "f.employee_id_or_name, \n";
+	$sql .= "f.employee_id, \n";
+	$sql .= "f.caller_name, \n";
 	$sql .= "f.interpret_language, \n";
 	$sql .= "f.interpreter_id, \n";
 	$sql .= "f.fusion_group_interpreter_id, \n";
@@ -229,7 +230,7 @@
 		$sql .= ", c.domain_name \n";
 	}
 	$sql .= "from v_xml_cdr as c \n";
-	$sql .= "left join v_client_call_records as f on f.call_uuid = c.xml_cdr_uuid \n";
+	$sql .= "right join v_client_call_records as f on f.call_uuid = c.xml_cdr_uuid \n";
 	$sql .= "left join v_clients as g on g.access_code = f.access_code \n";
 	$sql .= "left join v_extensions as e on e.extension_uuid = c.extension_uuid \n";
 	$sql .= "inner join v_domains as d on d.domain_uuid = c.domain_uuid \n";
@@ -239,9 +240,10 @@
 	else {
 		$sql .= "where c.domain_uuid = :domain_uuid \n";
 		$parameters['domain_uuid'] = $domain_uuid;
+		//select only ccr records with start timestamp & access code filled in
+		$sql .= "and EXTRACT(EPOCH FROM c.end_stamp - f.start_timestamp) > 0 \n";
+		$sql .= "and f.access_code != '' \n";
 	}
-	$sql .= "and EXTRACT(EPOCH FROM c.end_stamp - f.start_timestamp) > 0 \n";
-	$sql .= "and f.access_code != '' \n";
 	if (strlen($access_code) > 0) {
 		$mod_access_code = str_replace("*", "%", $access_code);
 		if (strstr($mod_access_code, '%')) {

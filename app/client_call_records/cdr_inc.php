@@ -10,7 +10,7 @@
 	require_once "resources/paging.php";
 
 //check permissions
-	if (permission_exists('agent_live_call_view')) {
+	if (permission_exists('client_call_record_view')) {
 		//access granted
 	}
 	else {
@@ -48,14 +48,10 @@
 	*/
 	$sql = "select count(*) from v_xml_cdr ";
 	$sql .= "where domain_uuid = :domain_uuid ";
-	/*
+	// if user does not have any extension available, the list will be empty
 	if (is_array($extension_uuids) && @sizeof($extension_uuids)) {
 		$sql .= "and (extension_uuid = '".implode("' or extension_uuid = '", $extension_uuids)."') \n";
 	}
-	*/
-	// if user does not have any extension available, the list will be empty
-	$sql .= "and (extension_uuid = '".implode("' or extension_uuid = '", $extension_uuids)."') \n";
-	$sql .= " and start_stamp::date = now()::date \n";
 	$parameters['domain_uuid'] = $domain_uuid;
 	$database = new database;
 	$num_rows = $database->select($sql, $parameters, 'column');
@@ -70,7 +66,7 @@
 
 //set the default paging
 	//$rows_per_page = $_SESSION['domain']['paging']['numeric'];
-	$rows_per_page = 10;
+	//$rows_per_page = 10;
 
 //prepare to page the results
 	//$rows_per_page = ($_SESSION['domain']['paging']['numeric'] != '') ? $_SESSION['domain']['paging']['numeric'] : 50; //set on the page that includes this page
@@ -109,6 +105,7 @@
 	$sql .= "c.source_number, \n";
 	$sql .= "case when length(c.caller_id_number) = 4 then c.caller_id_number else c.destination_number end as destination_number, \n";
 	$sql .= "c.leg, \n";
+	$sql .= "c.answer_epoch, \n";
 	$sql .= "c.answer_stamp, \n";
 	$sql .= "c.sip_hangup_disposition, \n";
 	$sql .= "f.client_call_record_uuid, \n";
@@ -140,15 +137,10 @@
 		$parameters['domain_uuid'] = $domain_uuid;
 	}
 //only show the user their calls
-	/*
+	// if user does not have any extension available, the list will be empty
 	if (is_array($extension_uuids) && @sizeof($extension_uuids)) {
 		$sql .= "and (c.extension_uuid = '".implode("' or c.extension_uuid = '", $extension_uuids)."') \n";
 	}
-	*/
-	// if user does not have any extension available, the list will be empty
-	$sql .= "and (c.extension_uuid = '".implode("' or c.extension_uuid = '", $extension_uuids)."') \n";
-//only daily calls
-	$sql .= " and c.start_stamp::date = now()::date \n";
 //order by
 	$sql .= " order by c.start_stamp desc \n";
 //limit and offset

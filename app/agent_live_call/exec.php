@@ -37,7 +37,8 @@
 	$call_uuid = '';
 	$access_code = '';
 	$cost_center_id = '';
-	$employee_id_or_name = '';
+	$employee_id = '';
+	$caller_name = '';
 	$interpret_language = '';
 	$interpreter_id = '';
 	$fusion_group_interpreter_id = '';
@@ -103,7 +104,8 @@ elseif (count($_POST) > 0) {
 		$call_uuid = $_POST['call_uuid'];
 		$access_code = $_POST['access_code'];
 		$cost_center_id = $_POST['cost_center_id'];
-		$employee_id_or_name = $_POST['employee_id_or_name'];
+		$employee_id = $_POST['employee_id'];
+		$caller_name = $_POST['caller_name'];
 		$interpret_language = $_POST['interpret_language'];
 		$interpreter_id = $_POST['interpreter_id'];
 		$fusion_group_interpreter_id = $_POST['fusion_group_interpreter_id'];
@@ -171,7 +173,8 @@ elseif (count($_POST) > 0) {
 			$array['client_call_records'][0]['domain_uuid'] = $_SESSION['domain_uuid'];
 			$array['client_call_records'][0]['access_code'] = $access_code;
 			$array['client_call_records'][0]['cost_center_id'] = $cost_center_id;
-			$array['client_call_records'][0]['employee_id_or_name'] = $employee_id_or_name;
+			$array['client_call_records'][0]['employee_id'] = $employee_id;
+			$array['client_call_records'][0]['caller_name'] = $caller_name;
 			$array['client_call_records'][0]['interpret_language'] = $interpret_language;
 			$array['client_call_records'][0]['interpreter_id'] = $interpreter_id;
 			$array['client_call_records'][0]['fusion_group_interpreter_id'] = $fusion_group_interpreter_id;

@@ -81,11 +81,16 @@ if (!class_exists('agent_live_call')) {
 								return strlen($row['number_alias']) >0 ? $row['number_alias'] : $row['extension'];
 							}, $extensions);
 							foreach($json_array['rows'] as $field) {
+								if (isset($array) && count($array) > 0) {
+									$extensions_added = array_column($array, 'extension');
+								} else {
+									$extensions_added = [];
+								}
 								$presence_id = $field['presence_id'];
 								$presence = explode("@", $presence_id);
 								$presence_id = $presence[0];
 								$presence_domain = $presence[1];
-								if (in_array($presence_id, $user_extensions)) {
+								if (in_array($presence_id, $user_extensions) && !in_array($presence_id, $extensions_added)) {
 									$user = $presence_id;
 									if ($presence_domain == $_SESSION['domain_name']) {
 

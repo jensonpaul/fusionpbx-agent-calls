@@ -92,7 +92,7 @@
 		echo "	<input type='hidden' name='archive_request' value='true'>\n";
 	}
 	echo "		<input type='hidden' name='direction' value='".escape($direction)."'>\n";
-	echo "		<input type='hidden' name='caller_id_name' value='".escape($caller_id_name)."'>\n";
+	echo "		<input type='hidden' name='caller_name' value='".escape($caller_name)."'>\n";
 	echo "		<input type='hidden' name='start_stamp_begin' value='".escape($start_stamp_begin)."'>\n";
 	echo "		<input type='hidden' name='start_stamp_end' value='".escape($start_stamp_end)."'>\n";
 	echo "		<input type='hidden' name='caller_id_number' value='".escape($caller_id_number)."'>\n";
@@ -110,7 +110,8 @@
 	echo "		<input type='hidden' name='client_call_record_uuid' value='".escape($client_call_record_uuid)."'>\n";
 	echo "		<input type='hidden' name='access_code' value='".escape($access_code)."'>\n";
 	echo "		<input type='hidden' name='cost_center_id' value='".escape($cost_center_id)."'>\n";
-	echo "		<input type='hidden' name='employee_id_or_name' value='".escape($employee_id_or_name)."'>\n";
+	echo "		<input type='hidden' name='employee_id' value='".escape($employee_id)."'>\n";
+	echo "		<input type='hidden' name='caller_name' value='".escape($caller_name)."'>\n";
 	echo "		<input type='hidden' name='interpret_language' value='".escape($interpret_language)."'>\n";
 	echo "		<input type='hidden' name='interpret_stamp_begin' value='".escape($interpret_stamp_begin)."'>\n";
 	echo "		<input type='hidden' name='interpret_stamp_end' value='".escape($interpret_stamp_end)."'>\n";
@@ -149,11 +150,76 @@
 		}
 		echo "		</select>";
 	}
-	if (!$archive_request && permission_exists('client_call_record_generate_invoice')) {
-		echo button::create(['type'=>'submit','label'=>$text['button-generate_invoice'],'icon'=>$_SESSION['theme']['button_icon_copy'],'name'=>'export_format','value'=>'invoice','onclick'=>"display_message('".$text['message-preparing_download']."');"]);
+	if ($_GET['show'] == 'all' && permission_exists('client_call_record_all')) {
+		//do not show generate invoice button
+	} elseif (!$archive_request && permission_exists('client_call_record_generate_invoice')) {
+		echo button::create(['type'=>'submit','label'=>$text['button-generate_invoice'],'icon'=>$_SESSION['theme']['button_icon_copy'],'style'=>'margin-right: 15px;','name'=>'export_format','value'=>'invoice','onclick'=>"display_message('".$text['message-preparing_download']."');"]);
 	}
-	if (!$archive_request && permission_exists('client_call_record_delete')) {
-		echo button::create(['type'=>'button','label'=>$text['button-delete'],'icon'=>$_SESSION['theme']['button_icon_delete'],'name'=>'btn_delete','onclick'=>"modal_open('modal-delete','btn_delete');"]);
+	if (permission_exists('client_call_record_add')) {
+		echo button::create(['type'=>'button','label'=>$text['button-add'],'icon'=>$_SESSION['theme']['button_icon_add'],'id'=>'btn_add_client_call_record','onclick'=>"new bootstrap.Modal(document.getElementById('modal_add_client_call_record'), {}).show();document.body.appendChild(document.getElementById('modal_add_client_call_record'));"]);
+		echo "<div class='modal fade' id='modal_add_client_call_record' tabindex='-1' role='dialog' aria-labelledby='addClientCallRecord' aria-hidden='true'>\n";
+		echo "  <div class='modal-dialog modal-xl' role='document'>\n";
+		echo "    <div class='modal-content'>\n";
+		echo "      <div class='modal-header'>\n";
+		echo "        <h5 class='modal-title' id='addClientCallRecord'>Add Client Call Record</h5>\n";
+		echo "        <button type='button' class='close' data-dismiss='modal' aria-label='Close'>\n";
+		echo "          <span aria-hidden='true'>&times;</span>\n";
+		echo "        </button>\n";
+		echo "      </div>\n";
+		echo "      <div class='modal-body'>\n";
+		echo "        <div id='cdr_list'></div>\n";
+		echo "      </div>\n";
+		echo "      <div class='modal-footer'>\n";
+		echo "        <button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>\n";
+		echo "      </div>\n";
+		echo "    </div>\n";
+		echo "  </div>\n";
+		echo "</div>\n";
+	}
+	?>
+	<script type="text/javascript">
+		$('#modal_add_client_call_record').on('shown.bs.modal', function (e) {
+			$('#cdr_list').html(''); // init empty div
+			//fetch cdr list
+			$.get( 'resources/cdr.php', function( response ) {
+				$('#cdr_list').html(response);
+			});
+		});
+		//ajax paging call records
+		$(document).on('click', '#cdr_list #paging_controls a', function(e) { 
+			e.preventDefault();
+			var page_url = $(this).attr('href');
+			$(this).find('button').html('<span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>Loading...');
+			$.get(page_url, function( response ) {
+				$('#cdr_list').html(response);
+			});
+		});
+		//add ccr execute
+		$(document).on('click', '.btn-ccr-add', function(e) {
+			var btn_this = $(this);
+			console.log(btn_this.data('uuid'));
+			$.ajax({
+				type: 'POST',
+				url: 'resources/cdr.php',
+				data: {
+					action: 'add_ccr',
+					xml_cdr_uuid: btn_this.data('uuid')
+				},
+				dataType: 'html',
+				success: function (data, status, xhr) {   // success callback function
+					$('#cdr_list').html(data);
+					display_message('Client Call Record created.', 'positive');
+				},
+				error: function (jqXhr, textStatus, errorMessage) { // error callback
+					display_message('Error: ' + errorMessage, 'negative');
+				}
+			});
+		});
+	</script>
+	<?php
+	if (!$archive_request && permission_exists('client_call_record_delete') && $result) {
+		echo button::create(['type'=>'button','label'=>$text['button-delete'],'icon'=>$_SESSION['theme']['button_icon_delete'],'id'=>'btn_delete','name'=>'btn_delete','style'=>'display: none;','onclick'=>"modal_open('modal-delete','btn_delete');"]);
+		echo modal::create(['id'=>'modal-delete','type'=>'delete','actions'=>button::create(['type'=>'button','label'=>$text['button-continue'],'icon'=>'check','id'=>'btn_delete','style'=>'float: right; margin-left: 15px;','collapse'=>'never','onclick'=>"modal_close(); list_action_set('delete'); list_form_submit('form_list');"])]);
 	}
 	if (permission_exists('client_call_record_all') && $_REQUEST['show'] !== 'all') {
 		echo button::create(['type'=>'button','label'=>$text['button-show_all'],'icon'=>$_SESSION['theme']['button_icon_all'],'link'=>'?show=all']);
@@ -165,10 +231,6 @@
 	echo "	</div>\n";
 	echo "	<div style='clear: both;'></div>\n";
 	echo "</div>\n";
-
-	if (!$archive_request && permission_exists('client_call_record_delete')) {
-		echo modal::create(['id'=>'modal-delete','type'=>'delete','actions'=>button::create(['type'=>'button','label'=>$text['button-continue'],'icon'=>'check','id'=>'btn_delete','style'=>'float: right; margin-left: 15px;','collapse'=>'never','onclick'=>"modal_close(); list_action_set('delete'); list_form_submit('form_list');"])]);
-	}
 
 	echo $text['description']." \n";
 	echo $text['description2']." \n";
@@ -309,7 +371,7 @@
 				echo "			<option value='domain_name' ".($order_by == 'domain_name' ? "selected='selected'" : null).">".$text['label-domain']."</option>\n";
 			}
 			if (permission_exists('client_call_record_caller_id_name')) {
-				echo "			<option value='caller_id_name' ".($order_by == 'caller_id_name' ? "selected='selected'" : null).">".$text['label-caller_id_name']."</option>\n";
+				echo "			<option value='caller_name' ".($order_by == 'caller_name' ? "selected='selected'" : null).">".$text['label-caller_name']."</option>\n";
 			}
 			if (permission_exists('client_call_record_caller_id_number')) {
 				echo "			<option value='caller_id_number' ".($order_by == 'caller_id_number' ? "selected='selected'" : null).">".$text['label-caller_id_number']."</option>\n";
@@ -360,7 +422,7 @@
 	$col_count = 0;
 	if (!$archive_request && permission_exists('client_call_record_delete')) {
 		echo "	<th class='checkbox'>\n";
-		echo "		<input type='checkbox' id='checkbox_all' name='checkbox_all' onclick='list_all_toggle();' ".($result ?: "style='visibility: hidden;'").">\n";
+		echo "		<input type='checkbox' id='checkbox_all' name='checkbox_all' onclick='list_all_toggle(); checkbox_on_change(this);' ".($result ?: "style='visibility: hidden;'").">\n";
 		echo "	</th>\n";
 		$col_count++;
 	}
@@ -375,7 +437,7 @@
 		$col_count++;
 	}
 	if (permission_exists('client_call_record_caller_id_name')) {
-		echo "<th class='hide-md-dn' style='min-width: 90px;'>".$text['label-caller_id_name']."</th>\n";
+		echo "<th class='hide-md-dn' style='min-width: 90px;'>".$text['label-caller_name']."</th>\n";
 		$col_count++;
 	}
 	if (permission_exists('client_call_record_caller_id_number')) {
@@ -435,7 +497,7 @@
 					$content .= "<tr class='list-row' href='".$list_row_url."'>\n";
 					if (!$archive_request && permission_exists('client_call_record_delete')) {
 						$content .= "	<td class='checkbox middle'>\n";
-						$content .= "		<input type='checkbox' name='client_call_records[$x][checked]' id='checkbox_".$x."' value='true' onclick=\"if (!this.checked) { document.getElementById('checkbox_all').checked = false; }\">\n";
+						$content .= "		<input type='checkbox' name='client_call_records[$x][checked]' id='checkbox_".$x."' value='true' onclick=\"checkbox_on_change(this); if (!this.checked) { document.getElementById('checkbox_all').checked = false; }\">\n";
 						$content .= "		<input type='hidden' name='client_call_records[$x][uuid]' value='".escape($row['client_call_record_uuid'])."' />\n";
 						$content .= "	</td>\n";
 					}
@@ -448,9 +510,9 @@
 					if (permission_exists('client_call_record_all') && $_REQUEST['show'] == "all") {
 						$content .= "	<td class='middle'>".$row['domain_name']."</td>\n";
 					}
-				//caller id name
+				//caller name
 					if (permission_exists('client_call_record_caller_id_name')) {
-						$content .= "	<td class='middle overflow hide-md-dn' title=\"".escape($row['caller_id_name'])."\">".escape($row['caller_id_name'])."</td>\n";
+						$content .= "	<td class='middle overflow hide-md-dn' title=\"".escape($row['caller_name'])."\">".escape($row['caller_name'])."</td>\n";
 					}
 				//source
 					if (permission_exists('client_call_record_caller_id_number')) {
