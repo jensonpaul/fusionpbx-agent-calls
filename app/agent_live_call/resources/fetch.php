@@ -117,6 +117,9 @@
 		$call_info['hangup_cause'] = urldecode($array["variables"]["hangup_cause"]);
 		$call_info['hangup_cause_q850'] = urldecode($array["variables"]["hangup_cause_q850"]);
 
+		$call_info['caller_destination'] = urldecode($array["variables"]["caller_destination"]);
+		$call_info['destination_number'] = urldecode($array["variables"]["last_sent_callee_id_number"]);
+
 echo json_encode($call_info);
 
 ?>
