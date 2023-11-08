@@ -296,6 +296,25 @@ if (is_array($activity)) {
 			$active_calls[$x]['interpreter_id'] = escape($interpreter_id);
 			$active_calls[$x]['fusion_group_interpreter_id'] = escape($fusion_group_interpreter_id);
 
+			//$active_calls[$x]['cdr'] = $ext;
+
+			$active_calls[$x]['uuid_dump'] = [
+				'uuid' => escape($ext['uuid']),
+				'Unique-ID' => escape($ext['Unique-ID']),
+				'Caller-Unique-ID' => escape($ext['Caller-Unique-ID']),
+				'variable_uuid' => escape($ext['variable_uuid']),
+				'Core-UUID' => escape($ext['Core-UUID']),
+				'variable_sip_call_id' => escape($ext['variable_sip_call_id']),
+				'call_uuid' => escape($ext['call_uuid']),
+				'Channel-Call-UUID' => escape($ext['Channel-Call-UUID']),
+				'Other-Leg-Unique-ID' => escape($ext['Other-Leg-Unique-ID']),
+				'variable_call_uuid' => escape($ext['variable_call_uuid']),
+				'variable_bridge_to' => escape($ext['variable_bridge_to']),
+				'variable_last_bridge_to' => escape($ext['variable_last_bridge_to']),
+				'variable_bridge_uuid' => escape($ext['variable_bridge_uuid']),
+				'variable_signal_bond' => escape($ext['variable_signal_bond'])
+			];
+
 			$x++;
 		}
 	}

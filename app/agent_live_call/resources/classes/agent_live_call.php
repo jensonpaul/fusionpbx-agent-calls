@@ -90,7 +90,8 @@ if (!class_exists('agent_live_call')) {
 								$presence = explode("@", $presence_id);
 								$presence_id = $presence[0];
 								$presence_domain = $presence[1];
-								if (in_array($presence_id, $user_extensions) && !in_array($presence_id, $extensions_added)) {
+								//if (in_array($presence_id, $user_extensions) && !in_array($presence_id, $extensions_added)) {
+								if (in_array($presence_id, $user_extensions)) {
 									$user = $presence_id;
 									if ($presence_domain == $_SESSION['domain_name']) {
 
